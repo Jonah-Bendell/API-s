@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Api's</title>
+</head>
+<body>
+
+
+    <h1>Message Board</h1>
+    <p><a href="form.html">Add New Message</a></p>
+
+    <table border="1" cellpadding="10">
+        <thead>
+            <tr>Name</tr>
+            <tr>Message</tr>
+            <tr>Action</tr>
+        </thead>
+        <tbody id="dataTable"></tbody>
+    </table>
+    
+
+    <script>
+async function loadMessages() {
+    
+
+    const response = await fetch('/api/messages');
+
+    const data = await response.json();
+
+    const tableBody = document.getElementById('dataTable');
+    tableBody.innerHTML= '';
+
+
+    data.forEach((item,index)=> {
+        const rowHtml = `
+        <tr>
+            <td>${item.name}</td>
+            <td>${item.message}</td>
+            <td><button onclick = "deleteMessage(${index})">Delete</button></td>
+        </tr>
+        `;
+        tableBody.innerHTML += rowHtml;
+    });
+}
+async function deleteMessage(index) {
+    await fetch(`/api/messages/${index}`,{
+        method:'Delete'
+    });
+
+    loadMessages();
+}
+loadMessages();
+    </script>
+</body>
+</html>
