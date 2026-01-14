@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Message Form</title>
-  
+  <style>
+ 
+  </style>
 </head>
 <body>
   <h1 id="pageTitle">Add New Message</h1>
@@ -17,12 +19,19 @@
 
   <div class="row">
     <button id="saveBtn" type="button">Save</button>
-    <a href="index.html"><button type="button">Cancel</button></a>
+    <a href="index.html" class="cancel-btn"><button type="button">Cancel</button></a>
   </div>
 
   <script>
+    // Get messages from localStorage
+    let messagesDB = JSON.parse(localStorage.getItem('messages')) || [];
+
+    function saveToStorage() {
+      localStorage.setItem('messages', JSON.stringify(messagesDB));
+    }
+
     const params = new URLSearchParams(window.location.search);
-    const idParam = params.get("id"); // string or null
+    const idParam = params.get("id");
     const isEdit = idParam !== null;
     const id = isEdit ? parseInt(idParam, 10) : null;
 
@@ -31,26 +40,23 @@
     const messageInput = document.getElementById("messageInput");
     const saveBtn = document.getElementById("saveBtn");
 
-    async function loadExistingMessage() {
-      const res = await fetch("/api/messages");
-      const messages = await res.json();
-
-      if (!Number.isInteger(id) || id < 0 || id >= messages.length) {
+    function loadExistingMessage() {
+      if (!Number.isInteger(id) || id < 0 || id >= messagesDB.length) {
         alert("Invalid message id.");
         window.location.href = "index.html";
         return;
       }
 
       pageTitle.textContent = "Edit Message";
-      nameInput.value = messages[id].name ?? "";
-      messageInput.value = messages[id].message ?? "";
+      nameInput.value = messagesDB[id].name ?? "";
+      messageInput.value = messagesDB[id].message ?? "";
     }
 
     if (isEdit) {
       loadExistingMessage();
     }
 
-    saveBtn.addEventListener("click", async () => {
+    saveBtn.addEventListener("click", () => {
       const name = nameInput.value.trim();
       const message = messageInput.value.trim();
 
@@ -63,20 +69,13 @@
 
       if (isEdit) {
         // UPDATE existing message
-        await fetch(`/api/messages/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+        messagesDB[id] = payload;
       } else {
         // CREATE new message
-        await fetch("/api/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+        messagesDB.push(payload);
       }
 
+      saveToStorage();
       window.location.href = "index.html";
     });
   </script>
