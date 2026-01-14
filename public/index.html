@@ -1,57 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Api's</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Message Board</title>
+  
 </head>
 <body>
+  <h1>Message Board</h1>
+  <p><a href="form.html">Add New Message</a></p>
 
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Message</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="dataTable"></tbody>
+  </table>
 
-    <h1>Message Board</h1>
-    <p><a href="form.html">Add New Message</a></p>
+  <script>
+    async function loadMessages() {
+      const response = await fetch("/api/messages");
+      const data = await response.json();
 
-    <table border="1" cellpadding="10">
-        <thead>
-            <tr>Name</tr>
-            <tr>Message</tr>
-            <tr>Action</tr>
-        </thead>
-        <tbody id="dataTable"></tbody>
-    </table>
-    
+      const tableBody = document.getElementById("dataTable");
+      tableBody.innerHTML = "";
 
-    <script>
-async function loadMessages() {
-    
+      data.forEach((item, index) => {
+        const row = document.createElement("tr");
 
-    const response = await fetch('/api/messages');
-
-    const data = await response.json();
-
-    const tableBody = document.getElementById('dataTable');
-    tableBody.innerHTML= '';
-
-
-    data.forEach((item,index)=> {
-        const rowHtml = `
-        <tr>
-            <td>${item.name}</td>
-            <td>${item.message}</td>
-            <td><button onclick = "deleteMessage(${index})">Delete</button></td>
-        </tr>
+        row.innerHTML = `
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.message)}</td>
+          <td>
+            <div class="actions">
+              <a href="form.html?id=${index}">
+                <button type="button">Edit</button>
+              </a>
+              <button type="button" onclick="deleteMessage(${index})">Delete</button>
+            </div>
+          </td>
         `;
-        tableBody.innerHTML += rowHtml;
-    });
-}
-async function deleteMessage(index) {
-    await fetch(`/api/messages/${index}`,{
-        method:'Delete'
-    });
+
+        tableBody.appendChild(row);
+      });
+    }
+
+    async function deleteMessage(index) {
+      await fetch(`/api/messages/${index}`, { method: "DELETE" });
+      loadMessages();
+    }
+
+    // Small helper so messages with < > don't break your page
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
 
     loadMessages();
-}
-loadMessages();
-    </script>
+  </script>
 </body>
 </html>

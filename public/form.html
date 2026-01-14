@@ -1,53 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Add Message</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Message Form</title>
+  
 </head>
 <body>
+  <h1 id="pageTitle">Add New Message</h1>
 
-    <h1>Add a Message</h1>
-    <p><a href="index.html">Back to Table</a></p>
+  <label for="nameInput">Name</label>
+  <input id="nameInput" type="text" placeholder="Your name" />
 
-    <form id="messageForm">
-        <label>Name:</label><br>
-        <input type="text" id="userName" required><br><br>
+  <label for="messageInput">Message</label>
+  <textarea id="messageInput" rows="5" placeholder="Your message"></textarea>
 
-        <label>Message:</label><br>
-        <textarea id="userMessage" required></textarea><br><br>
+  <div class="row">
+    <button id="saveBtn" type="button">Save</button>
+    <a href="index.html"><button type="button">Cancel</button></a>
+  </div>
 
-        <button type="submit">Send to API</button>
-    </form>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const idParam = params.get("id"); // string or null
+    const isEdit = idParam !== null;
+    const id = isEdit ? parseInt(idParam, 10) : null;
 
-    <script>
-        // Listen for the "Submit" button click
-        document.getElementById('messageForm').addEventListener('submit', async (event) => {
-            // 1. Prevent the page from refreshing (the default behavior)
-            event.preventDefault();
+    const pageTitle = document.getElementById("pageTitle");
+    const nameInput = document.getElementById("nameInput");
+    const messageInput = document.getElementById("messageInput");
+    const saveBtn = document.getElementById("saveBtn");
 
-            // 2. Collect the data from the input fields
-            const dataToSend = {
-                name: document.getElementById('userName').value,
-                message: document.getElementById('userMessage').value
-            };
+    async function loadExistingMessage() {
+      const res = await fetch("/api/messages");
+      const messages = await res.json();
 
-            // 3. Send the data to the Backend using POST
-            const response = await fetch('/api/messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(dataToSend) // Turn the JS object into a string
-            });
+      if (!Number.isInteger(id) || id < 0 || id >= messages.length) {
+        alert("Invalid message id.");
+        window.location.href = "index.html";
+        return;
+      }
 
-            // 4. If the server says "OK", go back to the table view
-            if (response.ok) {
-                window.location.href = 'index.html';
-            } else {
-                alert("Something went wrong!");
-            }
+      pageTitle.textContent = "Edit Message";
+      nameInput.value = messages[id].name ?? "";
+      messageInput.value = messages[id].message ?? "";
+    }
+
+    if (isEdit) {
+      loadExistingMessage();
+    }
+
+    saveBtn.addEventListener("click", async () => {
+      const name = nameInput.value.trim();
+      const message = messageInput.value.trim();
+
+      if (!name || !message) {
+        alert("Please fill in both name and message.");
+        return;
+      }
+
+      const payload = { name, message };
+
+      if (isEdit) {
+        // UPDATE existing message
+        await fetch(`/api/messages/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
         });
-    </script>
+      } else {
+        // CREATE new message
+        await fetch("/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      }
 
+      window.location.href = "index.html";
+    });
+  </script>
 </body>
 </html>
